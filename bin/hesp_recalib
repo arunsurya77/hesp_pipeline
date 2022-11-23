@@ -1,0 +1,140 @@
+#!/usr/bin/python
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.colors import LogNorm
+import numpy, time
+import peakutils
+from astropy.io import fits
+from scipy.ndimage import morphology as morph
+from scipy.ndimage import filters
+import os
+import numpy as np
+from scipy import interpolate
+import progressbar
+from time import sleep
+import configparser
+import sys
+from scipy.ndimage.interpolation import shift
+from os.path import expanduser
+from astropy.modeling import models, fitting
+home = expanduser("~")
+
+#Parse the config parameters
+Config=configparser.ConfigParser()
+Config.read(home+'/'+'hesp.config')
+objname=Config.get('Headers','objname')
+objtype=Config.get('Headers','objtype')
+reseltype=Config.get('Headers','reseltype')
+dateobs=Config.get('Headers','dateobs')
+timeobs=Config.get('Headers','timeobs')
+exptime=Config.get('Headers','exptime')
+reselkeylow=Config.get('Keys','reselkeylow')
+reselkeyhigh=Config.get('Keys','reselkeyhigh')
+biaskey=Config.get('Keys','biaskey')
+flatkey=Config.get('Keys','flatkey')
+calibkey=Config.get('Keys','calibkey')
+objectkey=Config.get('Keys','objectkey')
+fits_index=int(Config.get('Fits','index'))
+binsize=float(Config.get('Extraction','binsize'))
+binres=float(Config.get('Extraction','binres'))
+path=Config.get('Config','path')
+if sys.argv[1]=='--set-default':
+                        sft=0
+			if sys.argv[2]=='high':
+				wave=numpy.zeros([62,4096])		
+				ro=96
+				if sys.argv[3]=='fib1':
+					wavefile='highwave_fib1'
+					wavearr=np.loadtxt(path+'wavehigh_fib1.txt')
+				else:
+					wavefile='highwave_fib2'
+					wavearr=np.loadtxt(path+'wavehigh_fib2.txt')	
+			else:
+				wave=numpy.zeros([61,4096])		
+				ro=93
+				if sys.argv[3]=='fib1':
+					wavefile='lowwave_fib1'
+					wavearr=np.loadtxt(path+'wavelow_fib1.txt')
+				else:
+					wavefile='lowwave_fib2'
+					wavearr=np.loadtxt(path+'wavelow_fib2.txt')
+
+else:			
+			if sys.argv[2]=='high':
+				x=fits.open(path+'highres_ec.fit')
+				wave=numpy.zeros([62,4096])		
+				ro=96
+				if sys.argv[3]=='fib1':
+					wavefile='highwave_fib1'
+					wavearr=np.loadtxt(path+'wavehigh_fib1.txt')
+				else:
+					wavefile='highwave_fib2'
+					wavearr=np.loadtxt(path+'wavehigh_fib2.txt')	
+			else:
+				x=fits.open(path+'lowres_ec.fit')
+				wave=numpy.zeros([61,4096])		
+				ro=93
+				if sys.argv[3]=='fib1':
+					wavefile='lowwave_fib1'
+					wavearr=np.loadtxt(path+'wavelow_fib1.txt')
+				else:
+					wavefile='lowwave_fib2'
+					wavearr=np.loadtxt(path+'wavelow_fib2.txt')
+				
+			x=x[0].data
+			
+			
+			y=fits.open(sys.argv[1])
+			y=y[0].data
+			
+			
+			lag=numpy.arange(-4,4,.01)
+			
+			shifts=[]
+			order=range(20,30,1)
+			for k in order:
+			    arr=[]
+			    line=y[k]
+			    refline=x[k]
+			    line=line-line.min()
+			    line=line/line.max()
+			    refline=refline-refline.min()
+			    refline=refline/refline.max()
+			    for i in lag:
+					 s=shift(refline,i)
+					 c=numpy.correlate(s,line)
+					 arr.append(c[0])
+			    arr=numpy.array(arr)
+			    shifts.append(lag[arr.argmax()])
+			    
+			sft=numpy.median(shifts)
+			print 'Found Shift:',sft
+		
+X=wavearr[:,0]
+X1=wavearr[:,1]
+Y=wavearr[:,2]
+Y=Y+sft
+Z=wavearr[:,3]
+Z1=Z*X1
+
+
+p_init = models.Chebyshev2D(x_degree=5,y_degree=4)
+fit_p = fitting.LevMarLSQFitter()
+p = fit_p(p_init, X, Y, Z1)
+summ=0
+for l in range(X.size):
+        summ=summ+((p(X[l],Y[l])/X1[l])-(Z1[l]/X1[l]))**2
+summ=summ/X.size	
+rms=numpy.sqrt(summ)	 
+print 'RMS',rms		 
+[x,y]=numpy.where(wave==0)		
+wave[x,y]=p(x,y)
+for i in range(wave.shape[0]):
+    wave[i,:]= wave[i,:]/ro
+    ro=ro-1
+
+numpy.save(path+wavefile,wave)	
+print 'Wavelength Recalibrated'
+
+
+

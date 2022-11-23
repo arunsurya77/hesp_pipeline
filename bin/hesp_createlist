@@ -1,0 +1,164 @@
+#!/usr/bin/python
+import os
+import matplotlib.pyplot as plt
+from astropy.io import fits
+import numpy
+import sys
+import configparser
+import progressbar
+from os.path import expanduser
+sys.path.append(os.path.realpath('.'))
+home = expanduser("~")
+
+#Parse the config parameters
+Config=configparser.ConfigParser()
+Config.read(home+'/'+'hesp.config')
+objname=Config.get('Headers','objname')
+objtype=Config.get('Headers','objtype')
+reseltype=Config.get('Headers','reseltype')
+dateobs=Config.get('Headers','dateobs')
+timeobs=Config.get('Headers','timeobs')
+exptime=Config.get('Headers','exptime')
+reselkeylow=Config.get('Keys','reselkeylow')
+reselkeyhigh=Config.get('Keys','reselkeyhigh')
+biaskey=Config.get('Keys','biaskey')
+flatkey=Config.get('Keys','flatkey')
+calibkey=Config.get('Keys','calibkey')
+objectkey=Config.get('Keys','objectkey')
+fits_index=int(Config.get('Fits','index'))
+binsize=float(Config.get('Extraction','binsize'))
+binres=float(Config.get('Extraction','binres'))
+path=Config.get('Config','path')
+directory=Config.get('Headers','directory')
+
+#Open the filelist
+f = open(directory+'files.txt', 'w')
+
+#Lists for storing the filetypes
+datlist=[]
+bl=[]
+ol=[]
+objl=[]
+tharl=[]
+coloh=[]
+tracel=[]
+
+#Display
+
+#Calculate number of files !Should rewrite with shell code
+numfile=0
+for fn in os.listdir(directory):
+    if os.path.isfile(directory+fn):
+        if fn.endswith('fits'):
+               numfile=numfile+1
+
+#Start Loop
+a=0
+print(  "'Analysing Directory...' \n" )
+bar = progressbar.ProgressBar(maxval=numfile, widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
+bar.start()
+for fn in os.listdir(directory):
+     if os.path.isfile(directory+fn):
+        if fn.endswith('fits'):
+           hdulist = fits.open(directory+fn)
+
+           # Read data block
+           try :
+             scidata=hdulist[1].data
+           except:
+             scidata=hdulist[0].data
+           if len(scidata.shape)==3:
+             scidata=scidata[0]
+
+           #Read headers and classify. Read data and compute mean,std etc..
+           try:
+               val=hdulist[0].header[objtype]
+               date=str(hdulist[0].header[dateobs])
+               time=str(hdulist[0].header[timeobs])
+               dat=hdulist[0].header[dateobs]
+               exp=str(hdulist[0].header[exptime])
+               a=a+1
+               bar.update(a)
+               if val==biaskey:
+                   fn=fn.ljust(25)
+                   mn='{0:.2f}'.format(scidata.mean())
+                   rms='{0:.2f}'.format(scidata.std())
+                   bl.append(fn.ljust(30)+mn.ljust(12)+rms.ljust(12)+date.ljust(17)+time.ljust(17))
+                   coloh.append(1)
+               elif val==flatkey:
+                   fn=fn.ljust(20)
+                   resel=hdulist[0].header[reseltype]
+                   if resel==reselkeylow:
+                       reselname='Low'
+                   else:
+                       reselname='High'
+                   mn='{0:.2f}'.format(scidata.mean())
+                   md='{0:.2f}'.format(numpy.median(scidata))
+                   objl.append(hdulist[0].header[objname])
+                   tracel.append(fn.ljust(30)+mn.ljust(12)+exp.ljust(12)+reselname.ljust(12)+date.ljust(17)+time.ljust(17))
+
+               elif val==calibkey:
+                   fn=fn.ljust(20)
+                   objct=hdulist[0].header[objname].replace(" ", "_")
+                   resel=hdulist[0].header[reseltype]
+                   if resel==reselkeylow:
+                       reselname='Low'
+                   else:
+                       reselname='High'
+                   mn='{0:.2f}'.format(scidata.mean())
+                   md='{0:.2f}'.format(numpy.median(scidata))
+                   objl.append(hdulist[0].header[objname].replace(" ", "_"))
+                   tharl.append(fn.ljust(30)+mn.ljust(12)+exp.ljust(12)+reselname.ljust(12)+date.ljust(17)+time.ljust(17))
+
+               elif val==objectkey:
+                   fn=fn.ljust(20)
+                   objct=hdulist[0].header[objname].replace(" ", "_")
+                   resel=hdulist[0].header[reseltype]
+                   if resel==reselkeylow:
+                       reselname='Low'
+                   else:
+                       reselname='High'
+                   mn='{0:.2f}'.format(scidata.mean())
+                   md='{0:.2f}'.format(numpy.median(scidata))
+                   objl.append(hdulist[0].header[objname].replace(" ", "_"))
+                   ol.append(fn.ljust(30)+objct.ljust(15)+mn.ljust(12)+exp.ljust(12)+reselname.ljust(12)+date.ljust(17)+time.ljust(17))
+                   coloh.append(5)
+           except KeyError:
+                pass
+bar.finish()
+f.write('BIAS\n')
+f.write('File      '.ljust(30)+'Mean'.ljust(12)+'RMS'.ljust(12)+'Date'.ljust(17)+'Time'.ljust(17))
+f.write('\n')
+for l in bl:
+        f.write(l)
+        f.write('\n')
+f.write('\n')
+f.write('OBJECT\n')
+f.write('File'.ljust(30)+'Object'.ljust(15)+'Mean'.ljust(12)+'Exposure'.ljust(12)+'Resolution'.ljust(12)+'Date'.ljust(17)+'Time'.ljust(17))
+f.write('\n')
+
+for l in ol:
+        f.write(l)
+        f.write('\n')
+f.write('\n')
+f.write('FLAT\n')
+f.write('File'.ljust(30)+'Mean'.ljust(12)+'Exposure'.ljust(12)+'Resolution'.ljust(12)+'Date'.ljust(17)+'Time'.ljust(17))
+f.write('\n')
+
+for l in tracel:
+        f.write(l)
+        f.write('\n')
+f.write('\n')
+f.write('CALIB\n')
+f.write('File'.ljust(30)+'Mean'.ljust(12)+'Exposure'.ljust(12)+'Resolution'.ljust(12)+'Date'.ljust(17)+'Time'.ljust(17))
+f.write('\n')
+
+for l in tharl:
+        f.write(l)
+        f.write('\n')
+
+f.close()
+
+
+
+

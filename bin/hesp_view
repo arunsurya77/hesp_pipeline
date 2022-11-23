@@ -1,0 +1,165 @@
+#!/usr/bin/python
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.colors import LogNorm
+import numpy, time
+import peakutils
+from astropy.io import fits
+from scipy.ndimage import morphology as morph
+from scipy.ndimage import filters
+import os
+import numpy as np
+from scipy import interpolate
+import progressbar
+from time import sleep
+import configparser
+import pandas as pd
+import sys
+from os.path import expanduser
+from astropy.visualization import (MinMaxInterval, SqrtStretch,LogStretch,ZScaleInterval,HistEqStretch,LinearStretch,
+                                   PowerStretch,ImageNormalize,simple_norm)
+home = expanduser("~")
+
+#Parse the config parameters
+Config=configparser.ConfigParser()
+Config.read(home+'/'+'hesp.config')
+objname=Config.get('Headers','objname')
+objtype=Config.get('Headers','objtype')
+reseltype=Config.get('Headers','reseltype')
+dateobs=Config.get('Headers','dateobs')
+exptime=Config.get('Headers','exptime')
+reselkeylow=Config.get('Keys','reselkeylow')
+reselkeyhigh=Config.get('Keys','reselkeyhigh')
+biaskey=Config.get('Keys','biaskey')
+flatkey=Config.get('Keys','flatkey')
+calibkey=Config.get('Keys','calibkey')
+objectkey=Config.get('Keys','objectkey')
+fits_index=int(Config.get('Fits','index'))
+binsize=float(Config.get('Extraction','binsize'))
+binres=float(Config.get('Extraction','binres'))
+path=Config.get('Config','path')
+
+fig = plt.figure(1)
+
+
+fl=sys.argv[1]
+hdu=fits.open(fl)
+scidata=hdu[0].data
+hdu=fits.open(fl[:-13]+'pp.fit')
+scidata2d=hdu[0].data
+try :
+	 resel=hdu[0].header[reseltype]
+except:
+	 print 'Failed extracting resolution from header..'
+	 print 'Assuming High Resolution Setting'
+	 resel='1'
+fiber=fl[-8:-7]
+
+if resel==reselkeyhigh:
+	if fiber=='1':
+		wavedata=numpy.load(path+'highwave_fib1.npy')
+	elif fiber=='2':
+		wavedata=numpy.load(path+'highwave_fib2.npy')
+	else:
+		print 'No fiber information'		
+else:
+	if fiber=='1':
+		wavedata=numpy.load(path+'lowwave_fib1.npy')
+	elif fiber=='2':
+		wavedata=numpy.load(path+'lowwave_fib2.npy')
+	else:
+		print 'No fiber information'
+wave=wavedata
+if resel==reselkeyhigh:
+	if fiber=='1':
+		trfl = path+'highresfiber1.trace'
+	elif fiber=='2':
+		trfl = path+'highresfiber2.trace'
+	else:
+		print 'No fiber information'		
+else:
+	if fiber=='1':
+		trfl = path+'lowresfiber1.trace'
+	elif fiber=='2':
+		trfl = path+'lowresfiber2.trace'
+	else:
+		print 'No fiber information'
+		
+
+content=np.loadtxt(trfl)
+
+a=0
+linecut=numpy.zeros(len(content))+2200
+orders=range(len(content))
+scatfitz=[]
+linecut1=[]
+linecut2=[]
+linecut3=[]
+linecut4=[]
+for l in range(content.shape[0]):
+ cp=content[l]
+ p=np.poly1d(cp)
+ scatfity=[]
+ scatfitx=[]
+ for x0 in range(0,4096,1):
+  y0=p(x0)
+  scatfity=numpy.append(scatfity,y0)
+  scatfitx=numpy.append(scatfitx,x0)
+  if x0==2220 :
+	  scatfitz=numpy.append(scatfitz,y0)
+  if x0==500 :
+	  linecut1=numpy.append(linecut1,y0)
+  if x0==1500 :
+	  linecut2=numpy.append(linecut2,y0)
+  if x0==4000 :
+	  linecut3=numpy.append(linecut3,y0)
+  if x0==3100 :
+	  linecut4=numpy.append(linecut4,y0)  	    
+ plt.plot(scatfitx,scatfity)
+ a=a+1 
+
+
+X = np.random.rand(100, 1000) 
+xs = np.mean(X, axis=1)
+ys = np.std(X, axis=1)
+norm=simple_norm(abs(scidata),'log')
+plt.imshow(scidata2d, cmap=cm.gray, norm=norm)
+#ax = fig.add_subplot(111)
+#ax.set_title('click on point to plot time series')
+line, = plt.plot( linecut, scatfitz, 'o', markersize=10,picker=5,color='red')  # 5 points tolerance
+plt.ylim([scatfitz.min()-200,scatfitz.max()+200])
+plt.xlim([0,4000])
+#plt.annotate('local max',xy = (2000, 2000), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+bbox_props = dict(boxstyle="rarrow,pad=0.3", fc="cyan", ec="b", lw=2)
+#plt.text(2000, 2000, "Direction", ha="center", va="center", rotation=45,
+            #size=15,
+            #bbox=bbox_props)
+for g in orders :
+ if g%2==0:
+	 plt.annotate(str(g+1),xy = (2200, scatfitz[g]), xytext = (-20, 0),textcoords = 'offset points', size=7,ha = 'right', va = 'center',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.9))
+	 plt.annotate(str(int(wave[g,500])),xy = (500, linecut1[g]), xytext = (0, 5),textcoords = 'offset points', color='green',alpha = 0.5,size=9,ha = 'right', va = 'center')
+	 plt.annotate(str(int(wave[g,4000])),xy = (4000, linecut3[g]), xytext = (0, 5),textcoords = 'offset points',color='green',alpha = 0.5, size=9,ha = 'right', va = 'center')
+ else:
+	 plt.annotate(str(g+1),xy = (2200, scatfitz[g]), xytext = (+25, 0),textcoords = 'offset points', size=7,ha = 'right', va = 'center',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.9))
+	 plt.annotate(str(int(wave[g,1500])),xy = (1500, linecut2[g]), xytext = (0, 5),textcoords = 'offset points', color='green',alpha = 0.5,size=9,ha = 'right', va = 'center')
+	 plt.annotate(str(int(wave[g,3100])),xy = (3100, linecut4[g]), xytext = (0, 5),textcoords = 'offset points',color='green',alpha = 0.5, size=9,ha = 'right', va = 'center')
+
+def onpick(event):
+    print event.ind
+    if event.artist!=line: return True
+
+    N = len(event.ind)
+    if not N: return True
+
+
+    figi = plt.figure()
+    for subplotnum, dataind in enumerate(event.ind):
+        ax = figi.add_subplot(N,1,subplotnum+1)
+        ax.plot(wavedata[dataind],scidata[dataind])
+        figi.canvas.set_window_title('Order Number %d'%(dataind))
+    figi.show()
+    return True
+
+fig.canvas.mpl_connect('pick_event', onpick)
+
+plt.show()

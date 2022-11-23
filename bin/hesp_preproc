@@ -1,0 +1,141 @@
+#!/usr/bin/python
+import configparser
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.colors import LogNorm
+import numpy, time
+import numpy as np
+from astropy.io import fits
+import os
+import progressbar
+from hesp_lib import *
+from ccdproc import  *
+import copy
+import progressbar
+from os.path import expanduser
+import configparser
+home = expanduser("~")
+
+#Parse the config parameters
+Config=configparser.ConfigParser()
+Config.read(home+'/'+'hesp.config')
+objname=Config.get('Headers','objname')
+objtype=Config.get('Headers','objtype')
+reseltype=Config.get('Headers','reseltype')
+dateobs=Config.get('Headers','dateobs')
+exptime=Config.get('Headers','exptime')
+reselkeylow=Config.get('Keys','reselkeylow')
+reselkeyhigh=Config.get('Keys','reselkeyhigh')
+biaskey=Config.get('Keys','biaskey')
+flatkey=Config.get('Keys','flatkey')
+calibkey=Config.get('Keys','calibkey')
+objectkey=Config.get('Keys','objectkey')
+fits_index=int(Config.get('Fits','index'))
+binsize=float(Config.get('Extraction','binsize'))
+binres=float(Config.get('Extraction','binres'))
+path=Config.get('Config','path')
+biasflg=Config.get('Process','bias')
+ovrscnflg=Config.get('Process','overscan')
+csmcflg=Config.get('Process','cosmic')
+csmc_clip=Config.get('Process','csmc_clip')
+directory=Config.get('Headers','directory')
+#Read the file list
+fl = open(directory+'files.txt', 'r')
+k=fl.readlines()
+bstrt=k.index('BIAS\n')
+ostrt=k.index('OBJECT\n')
+fstrt=k.index('FLAT\n')
+cstrt=k.index('CALIB\n')
+fin=len(k)
+print(directory)
+try:
+    biaslist= pd.read_csv(directory+'files.txt',nrows=(ostrt-bstrt-3),sep='\s+',header=bstrt+1)
+    biaslist=biaslist.File.values
+except:
+    biaslist=[]
+try:
+    objectlist= pd.read_csv(directory+'files.txt',nrows=(fstrt-ostrt-3),sep='\s+',header=ostrt)
+    objectlist=objectlist.File.values
+except:
+    objectlist=[]
+try:
+    flatlist= pd.read_csv(directory+'files.txt',nrows=(cstrt-fstrt-3),delimiter=r"\s+",header=fstrt-1)
+    flatlist=flatlist.File.values
+except:
+    flatlist=[]
+try:
+    caliblist=pd.read_csv(directory+'files.txt',nrows=(fin-cstrt-2),delimiter=r"\s+",header=cstrt-2   )
+    caliblist=caliblist.File.values
+except:
+    caliblist=[]
+
+files=np.concatenate([biaslist,objectlist,flatlist,caliblist],axis=0)
+a=0
+if ovrscnflg=='True':
+    print("Overscan and Trimming Files... \n")
+else:
+    print("Trimming Files...' \n")
+bar = progressbar.ProgressBar(maxval=len(files), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
+bar.start()
+for i in files:
+        hdu= fits.open(directory+i)
+        try :
+         scidata=hdu[1].data
+        except:
+         scidata=hdu[0].data
+        if len(scidata.shape)==3:
+            scidata=scidata[0]
+        ccddata=CCDData(scidata,unit='adu')
+        cleanccd=ccddata
+        if ovrscnflg=='True':
+            no_scan = subtract_overscan(cleanccd, overscan=cleanccd[:, 0:50])
+        else:
+            no_scan = cleanccd
+        no_scan_trim=trim_image(no_scan[:,50:4146])
+        hduOut =fits.PrimaryHDU(no_scan_trim)
+        hdu[0].header['BZERO']=0
+        hdu[0].header['BSCALE']=1
+        hduOut.header=copy.copy(hdu[0].header)
+        hduOut.writeto(i[:-5]+'_pp.fit',overwrite=True)
+        a=a+1
+        bar.update(a)
+bar.finish()
+if biasflg=='True':
+        print("'Computing Master Bias...' \n")
+        biascombine(biaslist)
+        hdu= fits.open('BIAS.fit')
+        biasdata=hdu[0].data
+
+        files=np.concatenate([objectlist,flatlist,caliblist],axis=0)
+        a=0
+        print("Bias subtraction...\n")
+        bar = progressbar.ProgressBar(maxval=len(files), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
+        bar.start()
+        for i in files:
+            hdu= fits.open(i[:-5]+'_pp.fit')
+            newdata=hdu[0].data-biasdata
+            newdata[newdata<0]=0
+            hduOut=fits.PrimaryHDU(newdata)
+            hduOut.header=copy.copy(hdu[0].header)
+            hduOut.writeto(i[:-5]+'_pp.fit',overwrite=True)
+            a=a+1
+            bar.update(a)
+        bar.finish()
+
+if csmcflg=='True':
+
+    files=np.concatenate([objectlist,[]],axis=0)
+    a=0
+    print("'Cosmic Ray Correction of Files...' \n")
+    bar = progressbar.ProgressBar(maxval=len(files), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
+    bar.start()
+    for i in files:
+        hdu= fits.open(i[:-5]+'_pp.fit')
+        newdata, mask = cosmicray_lacosmic(np.array(hdu[0].data), sigclip=int(csmc_clip))
+        hduOut=fits.PrimaryHDU(newdata)
+        hduOut.header=copy.copy(hdu[0].header)
+        hduOut.writeto(i[:-5]+'_pp.fit',overwrite=True)
+        a=a+1
+        bar.update(a)
+    bar.finish()
+
