@@ -6,6 +6,7 @@ import numpy
 import sys
 import configparser
 import progressbar
+import pandas as pd
 from os.path import expanduser
 sys.path.append(os.path.realpath('.'))
 home = expanduser("~")

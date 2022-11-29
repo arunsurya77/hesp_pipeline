@@ -8,3 +8,4 @@ matplotlib
 ccdproc
 os 
 sys
+pandas

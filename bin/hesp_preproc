@@ -12,6 +12,7 @@ from hesp_lib import *
 from ccdproc import  *
 import copy
 import progressbar
+import pandas as pd
 from os.path import expanduser
 import configparser
 home = expanduser("~")
