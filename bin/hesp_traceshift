@@ -134,12 +134,12 @@ def process(val):
 def savetrace(val):
      global fiber1,fiber2,resflag
      print('Writing trace files...')
-     if resflag=='low':
-         f1 = 'lowresfibre1.trace'
-         f2 = 'lowresfibre2.trace'
+     if sys.argv[2]=='low':
+         f1 = 'lowresfiber1.trace'
+         f2 = 'lowresfiber2.trace'
      else:
-         f1 = 'highresfibre1.trace'
-         f2 = 'highresfibre2.trace'     
+         f1 = 'highresfiber1.trace'
+         f2 = 'highresfiber2.trace'     
      fl1 = np.loadtxt(path+f1)
      fl2 = np.loadtxt(path+f2)             
      global dist
