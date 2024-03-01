@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/home/arun/anaconda3/bin/python
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import LogNorm
@@ -50,14 +50,10 @@ for fl in flist:
 	hdu=fits.open(fl)
 	header=hdu[0].header
 	flux=hdu[0].data
-	try :
-		 resel=hdu[0].header[reseltype]
-	except:
-		 print 'Failed extracting Resolution from header..'
-		 sys.exit()
+
 	
 	fiber=fl[-8:-7]
-	
+	resel=reselkeylow
 	if resel==reselkeylow:
 		if fiber=='1':
 			wave=np.load(path+'lowwave_fib1.npy')
@@ -71,7 +67,7 @@ for fl in flist:
 			wave=np.load(path+'highwave_fib2.npy')
 		orstrt=93	
 	else:
-		print 'Error reading resolution'
+		print( 'Error reading resolution')
 		sys.exit() 				
 			
 	header['WCSDIM']  =                    2
@@ -108,5 +104,5 @@ for fl in flist:
 	hduOut =fits.PrimaryHDU(flux)
 	hduOut.header=header
 	hduOut.writeto(fl[:-7]+'_wc.fit',overwrite=True)
-	print 'Headers updated with wavelength info for', fl
+	print( 'Headers updated with wavelength info for', fl)
 	

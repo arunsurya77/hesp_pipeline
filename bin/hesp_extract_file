@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/home/arun/anaconda3/bin/python
 import configparser
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -49,9 +49,9 @@ exfl=sys.argv[1]
 files=[exfl]
 
 for i in files:
- print 'Extracting File '+ i   
+ print( 'Extracting File '+ i   )
  hdu= fits.open(i)
- scidata=hdu[0].data	 
+ scidata=hdu[0].data     
  xaxis=numpy.linspace(0,4112,4112)
  yaxis=numpy.linspace(0,4096,4096)
  xx,yy=numpy.meshgrid(xaxis,yaxis)
@@ -62,21 +62,21 @@ for i in files:
  scattery=numpy.array([])
  
  try :
-	 resel=hdu[0].header[reseltype]
+         resel=hdu[0].header[reseltype]
  except:
-	 print 'Failed extracting Resolution from header..'
-	 print 'Assuming Low Resolution'
-	 resel='0'
+         print( 'Failed extracting Resolution from header..')
+         print( 'Assuming Low Resolution')
+         resel='0'
 
  if resel==reselkeylow:
      fl = path+'lowresfiber1.trace'
      content=np.loadtxt(fl)
      a=0
      bar = progressbar.ProgressBar(maxval=len(content), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
-     print  "Extracting Orders from fiber 1... \n"
+     print(  "Extracting Orders from fiber 1... \n")
      bar.start()
      for l in range(content.shape[0]):
-	 
+         
       bar.update(a)     
       cp=content[l]
       p=np.poly1d(cp)
@@ -89,21 +89,21 @@ for i in files:
        y0=p(x0)
        sum=0
        for pix in numpy.arange(y0-(binsize/2),y0+(binsize/2),binres):
-	scatbiny=numpy.append(scatbiny,pix)
-	y=pix
-	#dydx=2*p[0]*x0+p[1]
-	#x=(-dydx)*(y-y0)+x0 In case of normal binning
-	x=x0
-	scatbinx=numpy.append(scatbinx,x)
-	sum=sum+f(y,x)
+        scatbiny=numpy.append(scatbiny,pix)
+        y=pix
+        #dydx=2*p[0]*x0+p[1]
+        #x=(-dydx)*(y-y0)+x0 In case of normal binning
+        x=x0
+        scatbinx=numpy.append(scatbinx,x)
+        sum=sum+f(y,x)
        datadummy=numpy.append(datadummy,sum) 
       if a==0:
-	data= numpy.hstack((data,datadummy))
+        data= numpy.hstack((data,datadummy))
       else: 
-	data= numpy.vstack((data,datadummy))
+        data= numpy.vstack((data,datadummy))
       a=a+1  
-     bar.finish()	 
-     print  "Extraction Complete. \n"   
+     bar.finish()        
+     print(  "Extraction Complete. \n")   
      hduOut =fits.PrimaryHDU(data)
      hduOut.header=hdu[0].header
      hduOut.writeto(i[:-7]+'_fiber1_ec.fit',overwrite=True)
@@ -115,7 +115,7 @@ for i in files:
 
      a=0
      bar = progressbar.ProgressBar(maxval=len(content), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
-     print  "Extracting Orders from fiber 2... \n"
+     print(  "Extracting Orders from fiber 2... \n")
      bar.start()
      for l in range(content.shape[0]):
 
@@ -130,22 +130,22 @@ for i in files:
        y0=p(x0)
        sum=0
        for pix in numpy.arange(y0-(binsize/2),y0+(binsize/2),binres):
-	scatbiny=numpy.append(scatbiny,pix)
-	y=pix
-	#dydx=2*p[0]*x0+p[1]
-	#x=(-dydx)*(y-y0)+x0
-	x=x0
-	scatbinx=numpy.append(scatbinx,x)
-	sum=sum+f(y,x)
+        scatbiny=numpy.append(scatbiny,pix)
+        y=pix
+        #dydx=2*p[0]*x0+p[1]
+        #x=(-dydx)*(y-y0)+x0
+        x=x0
+        scatbinx=numpy.append(scatbinx,x)
+        sum=sum+f(y,x)
        datadummy=numpy.append(datadummy,sum) 
 
       if a==0:
-	data= numpy.hstack((data,datadummy))
+        data= numpy.hstack((data,datadummy))
       else: 
-	data= numpy.vstack((data,datadummy))
+        data= numpy.vstack((data,datadummy))
       a=a+1  
-     bar.finish()	 
-     print  "Extraction Complete. \n"   
+     bar.finish()        
+     print(  "Extraction Complete. \n")   
      plt.show()  
      hduOut =fits.PrimaryHDU(data)
      hduOut.header=hdu[0].header
@@ -158,10 +158,10 @@ for i in files:
      
      a=0
      bar = progressbar.ProgressBar(maxval=len(content), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
-     print  "Extracting Orders from fiber 1... \n"
+     print(  "Extracting Orders from fiber 1... \n")
      bar.start()
      for l in range(content.shape[0]):
-	 
+         
       bar.update(a)     
       cp=content[l]
       p=np.poly1d(cp)
@@ -174,21 +174,21 @@ for i in files:
        y0=p(x0)
        sum=0
        for pix in numpy.arange(y0-(binsize/2),y0+(binsize/2),binres):
-	scatbiny=numpy.append(scatbiny,pix)
-	y=pix
-	#dydx=2*p[0]*x0+p[1]
-	#x=(-dydx)*(y-y0)+x0 In case of normal binning
-	x=x0
-	scatbinx=numpy.append(scatbinx,x)
-	sum=sum+f(y,x)
+        scatbiny=numpy.append(scatbiny,pix)
+        y=pix
+        #dydx=2*p[0]*x0+p[1]
+        #x=(-dydx)*(y-y0)+x0 In case of normal binning
+        x=x0
+        scatbinx=numpy.append(scatbinx,x)
+        sum=sum+f(y,x)
        datadummy=numpy.append(datadummy,sum) 
       if a==0:
-	data= numpy.hstack((data,datadummy))
+        data= numpy.hstack((data,datadummy))
       else: 
-	data= numpy.vstack((data,datadummy))
+        data= numpy.vstack((data,datadummy))
       a=a+1  
-     bar.finish()	 
-     print  "Extraction Complete. \n"   
+     bar.finish()        
+     print(  "Extraction Complete. \n")   
      hduOut =fits.PrimaryHDU(data)
      hduOut.header=hdu[0].header
      hduOut.writeto(i[:-7]+'_fiber1_ec.fit',overwrite=True)
@@ -201,7 +201,7 @@ for i in files:
 
      a=0
      bar = progressbar.ProgressBar(maxval=len(content), widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(),' ', progressbar.ETA()])
-     print  "Extracting Orders from fiber 2... \n"
+     print(  "Extracting Orders from fiber 2... \n")
      bar.start()
      for l in range(content.shape[0]):
       bar.update(a)
@@ -217,22 +217,22 @@ for i in files:
        y0=p(x0)
        sum=0
        for pix in numpy.arange(y0-(binsize/2),y0+(binsize/2),binres):
-	scatbiny=numpy.append(scatbiny,pix)
-	y=pix
-	#dydx=2*p[0]*x0+p[1]
-	#x=(-dydx)*(y-y0)+x0
-	x=x0
-	scatbinx=numpy.append(scatbinx,x)
-	sum=sum+f(y,x)
+        scatbiny=numpy.append(scatbiny,pix)
+        y=pix
+        #dydx=2*p[0]*x0+p[1]
+        #x=(-dydx)*(y-y0)+x0
+        x=x0
+        scatbinx=numpy.append(scatbinx,x)
+        sum=sum+f(y,x)
        datadummy=numpy.append(datadummy,sum) 
 
       if a==0:
-	data= numpy.hstack((data,datadummy))
+        data= numpy.hstack((data,datadummy))
       else: 
-	data= numpy.vstack((data,datadummy))
+        data= numpy.vstack((data,datadummy))
       a=a+1  
-     bar.finish()	 
-     print  "Extraction Complete. \n"   
+     bar.finish()        
+     print(  "Extraction Complete. \n"   )
      plt.show()  
      hduOut =fits.PrimaryHDU(data)
      hduOut.header=hdu[0].header

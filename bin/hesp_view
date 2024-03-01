@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/home/arun/anaconda3/bin/python
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import LogNorm
@@ -50,8 +51,8 @@ scidata2d=hdu[0].data
 try :
 	 resel=hdu[0].header[reseltype]
 except:
-	 print 'Failed extracting resolution from header..'
-	 print 'Assuming High Resolution Setting'
+	 print( 'Failed extracting resolution from header..')
+	 print( 'Assuming High Resolution Setting')
 	 resel='1'
 fiber=fl[-8:-7]
 
@@ -61,14 +62,14 @@ if resel==reselkeyhigh:
 	elif fiber=='2':
 		wavedata=numpy.load(path+'highwave_fib2.npy')
 	else:
-		print 'No fiber information'		
+		print( 'No fiber information'	)	
 else:
 	if fiber=='1':
 		wavedata=numpy.load(path+'lowwave_fib1.npy')
 	elif fiber=='2':
 		wavedata=numpy.load(path+'lowwave_fib2.npy')
 	else:
-		print 'No fiber information'
+		print( 'No fiber information')
 wave=wavedata
 if resel==reselkeyhigh:
 	if fiber=='1':
@@ -76,14 +77,14 @@ if resel==reselkeyhigh:
 	elif fiber=='2':
 		trfl = path+'highresfiber2.trace'
 	else:
-		print 'No fiber information'		
+		print( 'No fiber information')		
 else:
 	if fiber=='1':
 		trfl = path+'lowresfiber1.trace'
 	elif fiber=='2':
 		trfl = path+'lowresfiber2.trace'
 	else:
-		print 'No fiber information'
+		print( 'No fiber information')
 		
 
 content=np.loadtxt(trfl)
@@ -145,7 +146,7 @@ for g in orders :
 	 plt.annotate(str(int(wave[g,3100])),xy = (3100, linecut4[g]), xytext = (0, 5),textcoords = 'offset points',color='green',alpha = 0.5, size=9,ha = 'right', va = 'center')
 
 def onpick(event):
-    print event.ind
+    print( event.ind)
     if event.artist!=line: return True
 
     N = len(event.ind)
@@ -156,7 +157,7 @@ def onpick(event):
     for subplotnum, dataind in enumerate(event.ind):
         ax = figi.add_subplot(N,1,subplotnum+1)
         ax.plot(wavedata[dataind],scidata[dataind])
-        figi.canvas.set_window_title('Order Number %d'%(dataind))
+        #figi.canvas.set_window_title('Order Number %d'%(dataind))
     figi.show()
     return True
 

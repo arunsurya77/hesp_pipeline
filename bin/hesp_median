@@ -1,0 +1,54 @@
+#!/home/arun/anaconda3/bin/python
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.colors import LogNorm
+import numpy, time
+import peakutils
+from astropy.io import fits
+from scipy.ndimage import morphology as morph
+from scipy.ndimage import filters
+import os
+from scipy import interpolate
+import progressbar
+from time import sleep
+from ccdproc import  cosmicray_lacosmic
+import copy
+import sys
+import configparser
+from os.path import expanduser
+home = expanduser("~")
+
+#Parse the config parameters
+Config=configparser.ConfigParser()
+Config.read(home+'/'+'hesp.config')
+objname=Config.get('Headers','objname')
+objtype=Config.get('Headers','objtype')
+reseltype=Config.get('Headers','reseltype')
+dateobs=Config.get('Headers','dateobs')
+exptime=Config.get('Headers','exptime')
+reselkeylow=Config.get('Keys','reselkeylow')
+reselkeyhigh=Config.get('Keys','reselkeyhigh')
+biaskey=Config.get('Keys','biaskey')
+flatkey=Config.get('Keys','flatkey')
+calibkey=Config.get('Keys','calibkey')
+objectkey=Config.get('Keys','objectkey')
+fits_index=int(Config.get('Fits','index'))
+binsize=float(Config.get('Extraction','binsize'))
+binres=float(Config.get('Extraction','binres'))
+path=Config.get('Config','path')
+
+fl=open(sys.argv[1], 'r')
+flist=fl.readlines()
+lis=[]
+for f in flist:
+     hdu=fits.open(f[:-1])
+     scidata=hdu[0].data	
+     lis.append(scidata)
+
+lis=np.array(lis)
+med=np.median(lis,axis=0)
+hduOut =fits.PrimaryHDU(med)
+hduOut.header=copy.copy(hdu[0].header)
+hduOut.writeto(sys.argv[2],overwrite=True)
