@@ -6,6 +6,4 @@ scipy
 numpy
 matplotlib
 ccdproc
-os 
-sys
 pandas

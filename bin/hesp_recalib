@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/Users/arun/anaconda3/bin/python
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import LogNorm
