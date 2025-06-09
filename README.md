@@ -1,7 +1,7 @@
 # HESP Pipeline
 This repo hosts the pipeline for HESP echelle spectrograph. 
 ## Installation
-The repo can be cloned using git clone
+The repo can be cloned using git clone to desired location
 `git clone https://github.com/arunsurya77/hesp_pipeline/`
 
 it has following files
@@ -9,6 +9,8 @@ it has following files
 * bin ​ directory with the source files and supportfiles
 * req.txt​ which has the list of python packages required for the installation
 * hesp.config ​the config file for the pipeline
+* change_python_path.py script to edit hesp programs to point to the python path
+* config_set.py script to edit the hesp.config to point to the hesp bin directory
 
 Make sure you have pip installed in your system. You can install it in ubuntu by
 
@@ -22,14 +24,14 @@ Use pip to installthe packages listed in req.txt
 
 `sudo pip install -r req.txt`
 
-Once the packages are installed copy the bin directory to a location in your home
-directory. 
-This could be inside a subdirectory also.
+Once the packages are installed run 
+
+`python config_set.py`
+`python change_python_path.py`
+
+
 Copy hesp.config to your home directory. 
 hesp.config has to be directly in your home directory and notinside any subdirectories .
-
-Edit your hesp.config and give the exact path to the bin directory in the `path=` line in
-Config subsection of hesp.config.
 
 Now to make the python scripts inside the bin directory executable. Go to the bin
 directory and use the command
